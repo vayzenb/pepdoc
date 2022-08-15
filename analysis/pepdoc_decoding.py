@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -8,8 +8,7 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 import pdb
 import scipy.stats as stats
-import scipy
-import statsmodels.api as sm
+
 
 data_dir = f'/lab_data/behrmannlab/claire/pepdoc/results_ex1' #read in the file; first value is the file name
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD

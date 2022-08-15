@@ -10,6 +10,8 @@ data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; f
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 results_dir = f'{curr_dir}/results' #where to save the results
 bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
+stim_onset = 13 #stimulus onset value (analysis time is -50, and we use 4 ms bins)
+offset_window =87 #when to cut the timecourse
 # bin_size = 1 
 categories = ['tool','nontool','bird','insect']
 labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
@@ -49,6 +51,9 @@ def concat_data(sub_list):
                 bin_data = curr_df.rolling(bin_size).mean() #rolling avg given the bin size
                 
                 bin_data = bin_data.dropna() #drop missing values
+
+                
+                bin_data = bin_data.iloc[stim_onset:offset_window,:] #cut the pre-stim period, and the post-analysis period
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels
