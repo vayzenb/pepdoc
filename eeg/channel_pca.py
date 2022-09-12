@@ -29,13 +29,15 @@ sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
 
 #channels
+#channels
 channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
             'right_dorsal': [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'dorsal':  [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118] + [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
+            'dorsal':  [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 109, 110, 118] + [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
             'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
             'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
-            'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
+            'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
             'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
+
 
 pca = PCA(n_components = .95) #95% variance explained
 
@@ -107,10 +109,15 @@ def select_channels(sub_data, channels):
 
 #create concatenated data with all subs
 all_sub_data = concat_data(sub_list)
-
+all_sub_mat = np.zeros((256,256))
+count_mat = np.zeros((256,256))+1
 for sub_data in all_sub_data:
     #pdb.set_trace()
     channel_data = pd.DataFrame()
+    try:
+        sub_data = sub_data.drop(columns = ['E257']) #drop columns that are not channels
+    except:
+        continue
 
     for roi in rois:
         curr_channel_data = select_channels(sub_data, channels[roi])
@@ -125,16 +132,29 @@ for sub_data in all_sub_data:
 
     #create dataframe with PC loadings
     loadings = pd.DataFrame(pca.components_.T, columns=pc_cols, index=sub_data.columns)
-
+    loadings = loadings.T
     #create RDM of PC loading similarity
     loading_mat = np.zeros((256,256))
+    
     for ii in range(1,257):
         for jj in range(1,257):
-            loading_mat[ii-1,jj-1] = euclidean_distances
+            try:
+                loading_mat[ii-1,jj-1] = euclidean_distances(loadings[f'E{ii}'].values.reshape(1, -1), loadings[f'E{jj}'].values.reshape(1, -1))[0][0]
+            except:
+                loading_mat[ii-1,jj-1] = np.nan
+
+    #standarize distance matrix
+    loading_mat = (loading_mat - np.nanmean(loading_mat))/np.nanstd(loading_mat)
+    
+    all_sub_mat = np.nansum(np.dstack((all_sub_mat,loading_mat)),2)
+    count_mat[np.where(np.isnan(loading_mat) == False)] = count_mat[np.where(np.isnan(loading_mat) == False)] + 1
+
+mean_mat = all_sub_mat/(count_mat)
+np.save(f'{results_dir}/channel_similarity.npy', mean_mat)
+    
+
             
-            1 - spatial.distance.cosine(loadings[f'PC{ii}'], loadings[f'PC{jj}'])
             
-    break
 
 
 '''
