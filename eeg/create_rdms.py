@@ -15,6 +15,7 @@ stim_onset = 0 #stimulus onset value (analysis time is -50, and we use 4 ms bins
 offset_window =138 #when to cut the timecourse
 # bin_size = 1 
 categories = ['tool','nontool','bird','insect']
+categories = ['bird','nontool','insect','tool'] #this order matches the models
 labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 
 #sub codes
@@ -32,7 +33,7 @@ channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 10
             'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
             'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
 
-
+iter = 10000
 
 def load_data(sub):
     
@@ -94,30 +95,65 @@ def create_rdm(data):
 
     return np.asanyarray(all_rdms)
 
+def create_sub_rdms():
+    for roi in rois:
+        all_sub_rdms = []
+        for sub in sub_list:
+            print(f'{sub} {roi}')
+            #load data
+            sub_data = load_data(sub) #load data for each sub
+            
+            #select channels for the current roi
+            roi_data = select_channels(sub_data, channels[roi])
+            
+            
+            #create RDM for each timepoint
+            rdm = create_rdm(roi_data)
+            np.save(f'{data_dir}/{sub}/{roi}_rdm.npy', rdm)
+
+            #standardize RDMS
+            rdm = (rdm - np.mean(rdm, axis=0))/np.std(rdm, axis=0)
+            all_sub_rdms.append(rdm)
+        
+        
+        all_sub_rdms = np.asanyarray(all_sub_rdms)
+        mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
+
+        #save RDM
+        np.save(f'{results_dir}/rsa/{roi}_rdm_models.npy', mean_rdm)
+
+#create_sub_rdms()
+
+#calculate noise ceiling
+
+
+    
 for roi in rois:
     all_sub_rdms = []
     for sub in sub_list:
-        print(f'{sub} {roi}')
-        #load data
-        sub_data = load_data(sub) #load data for each sub
         
-        #select channels for the current roi
-        roi_data = select_channels(sub_data, channels[roi])
-        
-        
-        #create RDM for each timepoint
-        rdm = create_rdm(roi_data)
-        np.save(f'{data_dir}/{sub}/{roi}_rdm.npy', rdm)
+        sub_rdm = np.load(f'{data_dir}/{sub}/{roi}_rdm.npy')
 
         #standardize RDMS
-        #rdm = (rdm - np.mean(rdm, axis=0))/np.std(rdm, axis=0)
-        all_sub_rdms.append(rdm)
-    
-    
-    all_sub_rdms = np.asanyarray(all_sub_rdms)
-    mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
+        sub_rdm = (sub_rdm - np.mean(sub_rdm, axis=0))/np.std(sub_rdm, axis=0)
 
-    #save RDM
-    np.save(f'{results_dir}/rsa/{roi}_rdm.npy', mean_rdm)
+        all_sub_rdms.append(sub_rdm)
+
+
+    all_sub_rdms = np.asanyarray(all_sub_rdms)
+    boot_corrs = np.zeros((iter, all_sub_rdms.shape[1]))
+    for ii in range(0,iter):
+        #print(f'iter {ii}')
+        #randomly shuffle the RDMs
+        np.random.shuffle(all_sub_rdms)
         
-    
+        #split into two sets
+        set1 = np.mean(all_sub_rdms[0:int(all_sub_rdms.shape[0]/2),:, :], axis=0)
+        set2 = np.mean(all_sub_rdms[int(all_sub_rdms.shape[0]/2):,:, :], axis=0)
+
+        for time in range(0, set1.shape[0]):
+            boot_corrs[ii,time] = np.corrcoef(set1[time,:], set2[time,:])[0,1]
+
+    np.save(f'{results_dir}/rsa/{roi}_noise_ceiling.npy', boot_corrs)
+
+        
