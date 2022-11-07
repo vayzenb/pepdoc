@@ -14,7 +14,7 @@ print('libraries loaded...')
 data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 results_dir = f'{curr_dir}/results' #where to save the results
-bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
+
 # bin_size = 1 
 categories = ['tool','nontool','bird','insect']
 labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
@@ -36,43 +36,28 @@ channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 10
             'frontal': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38],
             'occipital': [145,146,17,135,136,137,124,125,138,149,157,156,165]}
 
+#signal info
+pre_stim = 50 #ms before stim onset
+stim_end = 300 #ms when stim goes off
+post_stim = 500 #ms after stim offset
+bin_length = 4 #length of each bin in ms
+bin_size = 1 #how many bins were averaged over; 1 = no averaging; 5 = average over 20 ms
+
+#calculate start window for analysis given the bin size and length
+start_window = pre_stim - (bin_length*(bin_size-1)) 
+#calculate the onset point of the stimulus in the dataframe given the start window and bin length
+stim_onset = int(start_window/bin_length)+1 
+stim_offset = int(stim_end/bin_length)+stim_onset-1
+timepoints = list(range(-start_window, post_stim, bin_length)) #134 4 ms bins
 
 #classifier info
 svm_test_size = .4
-svm_splits = 50
+svm_splits = 20
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
-#clf = make_pipeline(StandardScaler(), GaussianNB())
 
-def load_data(sub_list):
-    
-    all_sub_data = []
-
-    for sub in sub_list: #loop through subs
-        all_data =[]
-
-        for category in categories: #loop through categories
-            for nn in range(1,6): #loop through exemplars in categories
-            
-                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.tsv' , sep='\t')#read in the file; first value is the file name
-                curr_df = curr_df.T #use pandas to transpose data
-                curr_df.columns = curr_df.iloc[0] #set the column names to the first row
-                curr_df = curr_df.drop(curr_df.index[0]) #drop the first row
-                curr_df = curr_df.astype(float) #convert to float
-
-                bin_data = curr_df.rolling(bin_size).mean() #rolling avg given the bin size
-                
-                bin_data = bin_data.dropna() #drop missing values
-                bin_data = bin_data.reset_index() #reset the index of the dataframe
-                
-                all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels
-                all_data.append(all_channel_data)
-            
-        all_sub_data.append(all_data)
-
-    return all_sub_data
-
+iter = 1000
 def decode_eeg(sub_data):
 
     '''
@@ -97,52 +82,93 @@ def decode_eeg(sub_data):
             temp_acc.append(clf.score(X_test, y_test))
 
         cat_decode.append(np.mean(temp_acc))
-        t_stat = stats.ttest_1samp(temp_acc, .25, axis = 0, alternative='greater')
-        decode_sig.append(t_stat[1])
-
-    decode_sig = np.asanyarray(decode_sig)
-    #decode_sig = decode_sig[10:]
-    onset = np.where(decode_sig <= .05)[0][0]
+ 
 
 
     #decode_sig = np.asanyarray(decode_sig)
     cat_decode = np.asanyarray(cat_decode)
 
-    return cat_decode, decode_sig
+    return cat_decode
 
-def select_channels(sub_data, channels):
+def resample_channels(all_subs):
     '''
-    Select channels
+    Resample channels
     '''
-    channels  =[f'E{ii}' for ii in channels] #convert channels into the same format as the columns
+    resampled_data = []
+    for sub_data in all_subs:
+        #sample channels with replacement
+        resampled = np.random.choice(sub_data.shape[2], sub_data.shape[2], replace = True)
+        sub_data = sub_data[:,:,resampled]
 
-    channel_data = []
-    for im_n in range(0, len(sub_data)):
-        df = pd.DataFrame()
-        for ii in channels: #loop through all channels of interest
-            if ii in sub_data[im_n].columns: #check if current channel exists in df
-                df[ii] = sub_data[im_n][ii] #if it does add it the empty one
+        resampled_data.append(sub_data)
+
         
-        channel_data.append(df)
 
-    return np.asanyarray(channel_data)
+    return resampled_data
 
+def calc_sig_time(all_sub_decode):
+    '''
+    Calculate significant time
+    '''
+    sig_ts = []
+    for time in range(0,all_sub_decode.shape[1]):
+        p_val= stats.ttest_1samp(all_sub_decode[:,time], .25, axis = 0, alternative='greater')
+        
+        #append the p-value for every time point
+        sig_ts.append(p_val[1])  
 
-all_sub_data = load_data(sub_list)
-
-
-for roi in rois:
-    roi_decoding = []
-    roi_sig = []
-    for sub in range(0, len(all_sub_data)):
-        print('Decoding: ', sub, roi)
-        roi_data = select_channels(all_sub_data[sub], channels[roi])
-        np.save(f'/{data_dir}/{sub_list[sub]}/{roi}_data.npy', roi_data)
-        decode_results, decode_sig = decode_eeg(roi_data)
-        roi_decoding.append(decode_results)
-        roi_sig.append(decode_sig)
     
-    roi_decoding = np.asanyarray(roi_decoding)
-    roi_sig = np.asanyarray(roi_sig)
-    np.save(f'{results_dir}/{roi}_decoding.npy', roi_decoding)
-    np.save(f'{results_dir}/{roi}_decoding_sig.npy', roi_sig)
+
+    #reconvert p-value list into a numpy array
+    sig_ts = np.asanyarray(sig_ts)
+    sig_onset = np.where(sig_ts <=.05,)[0][0]
+
+    return sig_onset*bin_length, sig_ts
+
+'''
+load sub data
+'''
+onset_df = pd.DataFrame(columns = rois)
+for roi in rois:
+    all_subs = []
+    for sub in sub_list:
+        #load sub data
+        #data are formatted stim x time x channels
+        curr_sub = np.load(f'{data_dir}/{sub}/{roi}_data.npy')
+
+        #analyze only stim period
+        curr_sub = curr_sub[:,stim_onset:,:]
+
+        #convert to pandas dataframe
+        
+        all_subs.append(curr_sub)
+
+    onset_boot = []
+    for ii in range(0,iter):
+        print(ii)
+        '''
+        resample channels
+        '''
+        resampled_data = resample_channels(all_subs)
+        '''
+        decode
+        '''
+        all_sub_decode = []
+        for sub_data in enumerate(resampled_data):
+            decode_ts = decode_eeg(sub_data[1])
+            all_sub_decode.append(decode_ts)
+        
+        all_sub_decode = np.asanyarray(all_sub_decode)
+        onset, decode_sig = calc_sig_time(all_sub_decode)
+        
+        onset_boot.append(onset)
+
+
+    onset_df[roi] = onset_boot
+'''
+save results
+'''
+onset_df.to_csv(f'{results_dir}/onsets/channel_resample_boots.csv')
+#np.save(f'{results_dir}/{roi}_onset_iter{ii}.npy', onset)
+
+
