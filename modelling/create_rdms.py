@@ -58,7 +58,7 @@ def create_cos_rdm(output, label):
     for ii in range(0,len(output)):
         for kk in range(ii+1,len(output)):  \
 
-            sim = cos(output[ii], output[kk])
+            sim = euc(output[ii], output[kk])
             sim =sim.cpu().numpy()
             rdm.append(sim)
             im_pair.append([label[ii], label[kk]])

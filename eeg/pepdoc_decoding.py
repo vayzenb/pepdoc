@@ -9,8 +9,9 @@ from sklearn.naive_bayes import GaussianNB
 import pdb
 import scipy.stats as stats
 
+print('libraries loaded...')
 
-data_dir = f'/lab_data/behrmannlab/claire/pepdoc/results_ex1' #read in the file; first value is the file name
+data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 results_dir = f'{curr_dir}/results' #where to save the results
 bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
@@ -22,7 +23,8 @@ labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
 
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral']
+rois = ['dorsal','ventral', 'occipital','frontal']
+rois = ['occipital','frontal','dorsal','ventral']
 
 #channels
 channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
@@ -31,11 +33,13 @@ channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 10
             'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
             'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
             'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
-            'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
+            'frontal': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38],
+            'occipital': [145,146,17,135,136,137,124,125,138,149,157,156,165]}
+
 
 #classifier info
 svm_test_size = .4
-svm_splits = 50
+svm_splits = 20
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
@@ -133,6 +137,7 @@ for roi in rois:
     for sub in range(0, len(all_sub_data)):
         print('Decoding: ', sub, roi)
         roi_data = select_channels(all_sub_data[sub], channels[roi])
+        np.save(f'/{data_dir}/{sub_list[sub]}/{roi}_data.npy', roi_data)
         decode_results, decode_sig = decode_eeg(roi_data)
         roi_decoding.append(decode_results)
         roi_sig.append(decode_sig)

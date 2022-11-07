@@ -108,7 +108,7 @@ def compute_aof(distImage ,IDX,sphere_points,epsilon):
 
 
 
-imfiles = glob.glob(f'{stim_folder}/*.png')
+imfiles = glob.glob(f'{stim_folder}/*.jpg')
 #os.makedirs(f'{out_folder}/binary/', exist_ok = True)
 os.makedirs(f'{out_folder}/blur/', exist_ok = True)
 os.makedirs(f'{out_folder}/coords/', exist_ok = True)
@@ -131,9 +131,9 @@ for imf in imfiles:
         continue
     else:
         im = io.imread(imf)
-        
+        #pdb.set_trace()
 
-        #im = rgb2gray(im)
+        im = rgb2gray(im)
 
         im = np.pad(im, pad_num) 
         im = resize(im, [225 +pad_num,225 +pad_num], anti_aliasing=True)

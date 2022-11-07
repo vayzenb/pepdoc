@@ -23,6 +23,7 @@ labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
 rois = ['dorsal','ventral']
 
+iter = 10000
 
 models = ['cornet_s','skel']
 
@@ -46,37 +47,67 @@ def calc_rsa(roi, model_data, covs):
     
     return model.rsquared, model.params, model.pvalues
 
+def calc_rsa_stats():
 
-roi_r2 = np.zeros((1,offset_window))
-roi_betas = np.zeros((len(models),offset_window))
-roi_ps = np.zeros((len(models),offset_window))
-roi_corrs = np.zeros((len(models),offset_window))
+    roi_r2 = np.zeros((1,offset_window))
+    roi_betas = np.zeros((len(models),offset_window))
+    roi_ps = np.zeros((len(models),offset_window))
+    roi_corrs = np.zeros((len(models),offset_window))
+    for roi in rois:
+        roi_data = np.load(f'{results_dir}/rsa/{roi}_rdm.npy')
+        
+        
+        for time in range(0,roi_data.shape[0]):
+            rdm = roi_data[time,:]
+
+            #standardize rdms
+            rdm = (rdm - rdm.mean()) / rdm.std()
+
+            #save rdms to matrix
+            r2, betas,pvals = calc_rsa(rdm, model_rdms, models)
+            roi_r2[0,time] = r2 
+            roi_betas[:,time] = betas
+            roi_ps[:,time] = pvals
+
+
+            for model in models:
+                
+                #calculate the correlation between the two rdms
+                corr = np.corrcoef(rdm, model_rdms[model])[0,1]
+                roi_corrs[models.index(model),time] = corr
+
+
+        #save the data
+        np.save(f'{results_dir}/rsa/{roi}_rsa_r2.npy', roi_r2)
+        np.save(f'{results_dir}/rsa/{roi}_rsa_betas.npy', roi_betas)
+        np.save(f'{results_dir}/rsa/{roi}_rsa_ps.npy', roi_ps)
+        np.save(f'{results_dir}/rsa/{roi}_rsa_corrs.npy', roi_corrs)
+
+
+#Calcualte bootstrap confidence intervals
+
 for roi in rois:
     roi_data = np.load(f'{results_dir}/rsa/{roi}_rdm.npy')
     
     
-    for time in range(0,roi_data.shape[0]):
-        rdm = roi_data[time,:]
+    boot_corrs = np.zeros((len(models),iter, roi_data.shape[0]))    
 
-        #standardize rdms
-        rdm = (rdm - rdm.mean()) / rdm.std()
+    for ii in range(0,iter):
+        
+        #resample roi data
+        sample_ind = np.random.choice(roi_data.shape[1], roi_data.shape[1], replace=True)
+        resampled_data = roi_data[:,sample_ind]
 
-        #save rdms to matrix
-        r2, betas,pvals = calc_rsa(rdm, model_rdms, models)
-        roi_r2[0,time] = r2 
-        roi_betas[:,time] = betas
-        roi_ps[:,time] = pvals
+        #resample model data
+        resampled_model = model_rdms.iloc[sample_ind,:]
+    
+        for time in range(0,roi_data.shape[0]):
+            rdm = resampled_data[time,:]
+            for model in models:
+                
+                #calculate the correlation between the two rdms
+                corr = np.corrcoef(rdm, resampled_model[model])[0,1]
+                boot_corrs[models.index(model),ii,time] = corr
 
+    np.save(f'{results_dir}/rsa/{roi}_rsa_boot_corrs.npy', boot_corrs)
 
-        for model in models:
-            
-            #calculate the correlation between the two rdms
-            corr = np.corrcoef(rdm, model_rdms[model])[0,1]
-            roi_corrs[models.index(model),time] = corr
-
-
-    #save the data
-    np.save(f'{results_dir}/rsa/{roi}_rsa_r2.npy', roi_r2)
-    np.save(f'{results_dir}/rsa/{roi}_rsa_betas.npy', roi_betas)
-    np.save(f'{results_dir}/rsa/{roi}_rsa_ps.npy', roi_ps)
-    np.save(f'{results_dir}/rsa/{roi}_rsa_corrs.npy', roi_corrs)
