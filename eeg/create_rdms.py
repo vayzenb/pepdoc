@@ -21,9 +21,11 @@ labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 #sub codes
 sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
 
-rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral']
 
+rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
+rois = ['frontal']
+
+#channels
 #channels
 channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
             'right_dorsal': [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
@@ -31,7 +33,8 @@ channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 10
             'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
             'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
             'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
-            'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
+            'frontal': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38],
+            'occipital': [145,146,17,135,136,137,124,125,138,149,157,156,165]}
 
 iter = 10000
 
@@ -91,9 +94,11 @@ def create_rdm(data):
     all_rdms = []
     for time in range(data.shape[1]):
         curr_time = data[:,time,:]
+                
         #pdb.set_trace()
         #rdm = 1-metrics.pairwise.cosine_similarity(curr_time)
         rdm = np.corrcoef(curr_time)
+        
         rdm = np.arctanh(rdm)
         rdm_vec = rdm[np.triu_indices(n=curr_time.shape[0],k=1)] #remove lower triangle
         all_rdms.append(rdm_vec*-1)
@@ -112,17 +117,27 @@ def create_sub_rdms():
             roi_data = select_channels(sub_data, channels[roi])
             
             
+            
             #create RDM for each timepoint
             rdm = create_rdm(roi_data)
-            np.save(f'{data_dir}/{sub}/{roi}_rdm.npy', rdm)
 
-            #standardize RDMS
-            rdm = (rdm - np.mean(rdm, axis=0))/np.std(rdm, axis=0)
-            all_sub_rdms.append(rdm)
+            if (np.isnan(rdm).any()):
+                continue
+            else:
+                np.save(f'{data_dir}/{sub}/{roi}_rdm.npy', rdm)
+
+                #standardize RDMS
+                rdm = (rdm - np.mean(rdm, axis=0))/np.std(rdm, axis=0)
+                all_sub_rdms.append(rdm)
+                
+            
         
         
         all_sub_rdms = np.asanyarray(all_sub_rdms)
+        
+        
         mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
+        #pdb.set_trace()
 
         #save RDM
         np.save(f'{results_dir}/rsa/{roi}_rdm.npy', mean_rdm)

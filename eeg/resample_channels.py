@@ -24,7 +24,7 @@ sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT
 
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
 rois = ['dorsal','ventral', 'occipital','frontal']
-rois = ['occipital','frontal','dorsal','ventral']
+
 
 #channels
 channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
@@ -130,6 +130,7 @@ load sub data
 '''
 onset_df = pd.DataFrame(columns = rois)
 for roi in rois:
+    print(roi)
     all_subs = []
     for sub in sub_list:
         #load sub data
@@ -145,7 +146,7 @@ for roi in rois:
 
     onset_boot = []
     for ii in range(0,iter):
-        print(ii)
+        
         '''
         resample channels
         '''
