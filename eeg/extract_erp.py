@@ -1,37 +1,36 @@
+#%%
+curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
+
+import sys
+sys.path.insert(0,curr_dir)
 import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
+import scipy.stats as stats
 
 import pdb
+import pepdoc_params as params
 
-data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
-curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 results_dir = f'{curr_dir}/results' #where to save the results
-bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
-stim_onset = 0 #stimulus onset value (analysis time is -50, and we use 4 ms bins)
-offset_window =138 #when to cut the timecourse
-# bin_size = 1 
-categories = ['tool','nontool','bird','insect']
-labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 
-#sub codes
-sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
+#load params for decoding
+channels = params.channels
+sub_list = params.sub_list
+data_dir = params.data_dir
+categories = params.categories
+labels = params.labels
 
-rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral']
-#channels
-channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
-            'right_dorsal': [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'dorsal':  [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 109, 110, 118] + [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
-            'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
-            'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
-            'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
+#timing info
+stim_onset = params.stim_onset
+bin_size = params.bin_size
+
+iter = 1000 #number of iterations to use for decoding
 
 
+rois = ['occipital','frontal','dorsal','ventral']
 
 def load_data(sub):
     
@@ -59,7 +58,24 @@ def load_data(sub):
 
     return all_data
 
+def extract_erp(sub_data):
+    '''
+    Extract ERP
+    '''
+    #average across channels
+    roi_mean = np.mean(sub_data, axis = 2)
+    #Average roi_data across objects
+    roi_mean = np.mean(roi_mean, axis = 0)
 
+    #absolute value
+    roi_mean = np.abs(roi_mean)
+
+    pre_stim = roi_mean[:stim_onset] #pull out the pre-stimulus data
+    pre_stim = np.mean(pre_stim) #average across prestim timepoints
+
+    roi_norm = roi_mean - pre_stim#subtract the prestimulus average from each timepoint
+        
+    return roi_norm
 
 
 def select_channels(sub_data, channels):
@@ -80,32 +96,110 @@ def select_channels(sub_data, channels):
     return np.asanyarray(channel_data)
 
 
+def calc_erps():
+    for roi in rois:
+        all_sub_data = []
+        for sub in sub_list:
+            print(f'{sub} {roi}')
+            #load data
+            sub_data = load_data(sub) #load data for each sub
+            
+            #select channels for the current roi
+            roi_data = select_channels(sub_data, channels[roi])
+            #roi_data = np.abs(roi_data) #take the absolute value of the data
 
-for roi in rois:
-    all_sub_data = []
-    for sub in sub_list:
-        print(f'{sub} {roi}')
-        #load data
-        sub_data = load_data(sub) #load data for each sub
-        
-        #select channels for the current roi
-        roi_data = select_channels(sub_data, channels[roi])
-        #roi_data = np.abs(roi_data) #take the absolute value of the data
+            #Average roi_data across channels for each object
+            roi_mean = extract_erp(roi_data)
 
-        #Average roi_data across channels for each object
-        roi_mean = np.mean(roi_data, axis = 2)
-        #Average roi_data across objects
-        roi_mean = np.mean(roi_mean, axis = 0)
+            
+            all_sub_data.append(roi_mean)
+        
+        
+        all_sub_data = np.asanyarray(all_sub_data)
+        
+        #mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
+        
+        #save RDM
+        np.save(f'{results_dir}/erp/{roi}_mean_ts.npy', all_sub_data)
+            
+def bootstrap_erp():
+    '''
+Boot strap participant data and extract onset
+'''
 
+    rois = ['dorsal','ventral']
+    iter = 1000
+
+    boot_df = pd.DataFrame()
+    for roi in rois:
+        roi_erp = np.load(f'{results_dir}/erp/{roi}_mean_ts.npy')
         
-        all_sub_data.append(roi_mean)
-    
-    
-    all_sub_data = np.asanyarray(all_sub_data)
-    
-    #mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
-    
-    #save RDM
-    np.save(f'{results_dir}/erp/{roi}_mean_ts.npy', all_sub_data)
+        roi_erp = roi_erp[:,stim_onset:]
+        erp_data = pd.DataFrame(roi_erp) #convert to dataframe because it has a good resampling function
+        erp_boot = []
+        sub_counts = np.zeros((1,erp_data.shape[1]))
+
+        for ii in range(0,iter):
+            
+            #resample the sub decode data with replacement
+            sub_sample = erp_data.sample(erp_data.shape[0],replace = True, random_state=ii)
+            
+            #convert it back to a numpy array
+            sub_sample = sub_sample.to_numpy() 
+            
+            #calculate the bootstrap sample mean
+            sig_boot = []
+            
+            #only add values if they are significant two timepoints in arow
+            sig_consistent = []
+            
+            sig_ts = []
+            for time in range(0,sub_sample.shape[1]):
+                p_val= stats.ttest_1samp(sub_sample[:,time], 0, axis = 0, alternative='greater')
+                
+                #append the p-value for every time point
+                sig_ts.append(p_val[1])  
+
+
+                #mark timepoints that are above chance for at least two timepoints in a row
+                if time > 0:
+
+                    if sig_ts[time] <= .05 and sig_ts[time-1] <=.05:
+                        sig_consistent.append(1)
+                    else:
+                        sig_consistent.append(0)
+
+            #reconvert p-value list into a numpy array
+            sig_ts = np.asanyarray(sig_ts)
+
+            #reconvert consistent list into a numpy array
+            sig_consistent = np.asanyarray(sig_consistent)
+                
+            #find the the first time point that is below change (0.05)
+            #np.where simply returns the indices (i.e., spots in an array), that meet some condition
+            #i'm simply grabbing the first value of that list, which corresponds to the first time point above chance
+            try:
+                sig_onset = np.where(sig_consistent ==1,)[0][0]
+            except:
+                sig_onset= erp_data.shape[1]
+            
+            
+            
+            sub_counts[0,np.where(sig_ts <=.05)[0]] += 1
+            
+            #if d_onset == 1:
+            #    pdb.set_trace()
+            
+            #convert to the actual time point
+            sig_onset = (sig_onset *4)
+
+            #add the onset value from the resample to a list
+            erp_boot.append(sig_onset)
         
-    
+        boot_df[roi] = erp_boot
+
+    boot_df.to_csv(f'{results_dir}/erp/erp_onset_boot.csv',index = False)
+
+
+calc_erps()
+bootstrap_erp()

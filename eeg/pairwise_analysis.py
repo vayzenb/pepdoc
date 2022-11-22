@@ -1,3 +1,8 @@
+curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
+import os
+import sys
+
+sys.path.insert(0,curr_dir)
 import pandas as pd
 import numpy as np
 
@@ -8,44 +13,46 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 import pdb
 import scipy.stats as stats
+import pepdoc_params as params
 
 print('libraries loaded...')
 
-data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
+
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 results_dir = f'{curr_dir}/results' #where to save the results
-bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
-# bin_size = 1 
-categories = ['tool','nontool','bird','insect']
-labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 
-#sub codes
-sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
+#load params for decoding
+channels = params.channels
+sub_list = params.sub_list
+data_dir = params.data_dir
+categories = params.categories
+labels = params.labels
 
-rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral', 'occipital','frontal']
+#timing info
+stim_onset = params.stim_onset
+bin_size = params.bin_size
+bin_length = params.bin_length
+
+category_comp = [['nontool','bird','insect']] #initial categories without tools
+label_comps = [[0]*5 + [1]*5 + [2]*5]
+
+#append each pairwise category comparison
+for cat1 in range(0,len(categories)):
+    for cat2 in range(cat1+1,len(categories)):
+        category_comp.append([categories[cat1],categories[cat2]])
+        label_comps.append([0]*5 + [1]*5)
+
 rois = ['occipital','frontal','dorsal','ventral']
-
-#channels
-channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
-            'right_dorsal': [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'dorsal':  [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 109, 110, 118] + [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
-            'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
-            'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
-            'frontal': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38],
-            'occipital': [145,146,17,135,136,137,124,125,138,149,157,156,165]}
-
 
 #classifier info
 svm_test_size = .4
-svm_splits = 50
+svm_splits = 5 #CHANGE ME
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
 #clf = make_pipeline(StandardScaler(), GaussianNB())
 
-def load_data(sub_list):
+def load_data(sub_list, categories):
     
     all_sub_data = []
 
@@ -110,6 +117,25 @@ def decode_eeg(sub_data):
 
     return cat_decode, decode_sig
 
+def extract_erp(sub_data):
+    '''
+    Extract ERP
+    '''
+    #average across channels
+    roi_mean = np.mean(sub_data, axis = 2)
+    #Average roi_data across objects
+    roi_mean = np.mean(roi_mean, axis = 0)
+
+    #absolute value
+    roi_mean = np.abs(roi_mean)
+
+    pre_stim = roi_mean[:stim_onset] #pull out the pre-stimulus data
+    pre_stim = np.mean(pre_stim) #average across prestim timepoints
+
+    roi_norm = roi_mean - pre_stim#subtract the prestimulus average from each timepoint
+        
+    return roi_norm
+
 def select_channels(sub_data, channels):
     '''
     Select channels
@@ -128,21 +154,39 @@ def select_channels(sub_data, channels):
     return np.asanyarray(channel_data)
 
 
-all_sub_data = load_data(sub_list)
 
 
-for roi in rois:
-    roi_decoding = []
-    roi_sig = []
-    for sub in range(0, len(all_sub_data)):
-        print('Decoding: ', sub, roi)
-        roi_data = select_channels(all_sub_data[sub], channels[roi])
-        np.save(f'/{data_dir}/{sub_list[sub]}/{roi}_data.npy', roi_data)
-        decode_results, decode_sig = decode_eeg(roi_data)
-        roi_decoding.append(decode_results)
-        roi_sig.append(decode_sig)
+for comps in category_comp:
+    all_sub_data = load_data(sub_list, comps)
+    labels = np.repeat(np.arange(0,len(comps)), 5) #create labels for each category
+    for roi in rois:
+        roi_decoding = []
+        roi_erp = []
+        roi_sig = []
+        erp_sig = []
     
-    roi_decoding = np.asanyarray(roi_decoding)
-    roi_sig = np.asanyarray(roi_sig)
-    np.save(f'{results_dir}/{roi}_decoding.npy', roi_decoding)
-    np.save(f'{results_dir}/{roi}_decoding_sig.npy', roi_sig)
+        
+        for sub in range(0, len(all_sub_data)):
+            roi_data = select_channels(all_sub_data[sub], channels[roi])
+            print('Decoding: ', sub, roi)
+            
+            #np.save(f'/{data_dir}/{sub_list[sub]}/{roi}_data.npy', roi_data)
+            decode_results, decode_sig = decode_eeg(roi_data)
+            roi_decoding.append(decode_results)
+            roi_sig.append(decode_sig)
+
+            print('ERP: ', sub, roi)
+            erp_results = extract_erp(roi_data)
+            roi_erp.append(erp_results)
+
+
+        
+        
+        roi_decoding = np.asanyarray(roi_decoding)
+        roi_sig = np.asanyarray(roi_sig)
+        roi_erp = np.asanyarray(roi_erp)
+        np.save(f'{results_dir}/decode/{roi}_decoding_{"_".join(comps)}.npy', roi_decoding)
+        np.save(f'{results_dir}/decode/{roi}_decoding_sig_{"_".join(comps)}.npy', roi_sig)
+        np.save(f'{results_dir}/erp/{roi}_erp_{"_".join(comps)}.npy', roi_erp)
+
+        
