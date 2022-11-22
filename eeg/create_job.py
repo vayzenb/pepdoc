@@ -20,13 +20,12 @@ run_time = "3-00:00:00"
 study_dir = f'/user_data/vayzenbe/GitHub_Repos/ginn/model_training'
 stim_dir = f'/lab_data/behrmannlab/image_sets/'
 
+script_list = ['decode_category','extract_erp','pairwise_analysis']
 
 
-#training info
-rois = ['occipital','frontal','dorsal','ventral']
-#lr = .003
 
-def setup_sbatch(job_name):
+
+def setup_sbatch(job_name, script_name):
     sbatch_setup = f"""#!/bin/bash -l
 # Job name
 #SBATCH --job-name={job_name}
@@ -48,27 +47,40 @@ def setup_sbatch(job_name):
 conda activate ml_new
 
 echo "images transferred"
-# python train_model.py /scratch/vayzenbe/{train_cat}/ --arch cornet_z --epochs 50 --nce-k 4096 --nce-t 0.07 --lr {lr} --nce-m 0.5 --low-dim 128 -b 256 --rand_seed {seed}
-# python supervised_training.py --data /scratch/vayzenbe/{train_cat}/ --arch {model_arch} --rand_seed {seed}
-python supervised_training.py --data /scratch/vayzenbe/{train_cat}/ --arch {model_arch} --resume /lab_data/behrmannlab/vlad/ginn/model_weights/{model_arch}_{train_cat}_15_{seed}.pth.tar
+python {script_name}
 """
     return sbatch_setup
 
 
 
+# run low-demand scripts
+for script in script_list:
+    job_name = script
+    script_path = f'{curr_dir}/eeg/{script}.py'
+    print(job_name)
 
+    #create sbatch script
+    f = open(f"{job_name}.sh", "a")
+    f.writelines(setup_sbatch(job_name, script_path))
+    
+    f.close()
+    
+    subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
+    os.remove(f"{job_name}.sh")
 
-for tt in train_type:
-    for rs in rand_seed:
-        job_name = f'{model_arch}_{tt}'
-        print(job_name)
-        #os.remove(f"{job_name}.sh")
-        
-        f = open(f"{job_name}.sh", "a")
-        f.writelines(setup_sbatch(model_arch, tt, rs))
-        
-        
-        f.close()
-        
-        subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
-        os.remove(f"{job_name}.sh")
+rois = ['occipital','frontal','dorsal','ventral']
+#run high-demand scripts
+for roi in rois:
+    job_name = f'{script}_{roi}'
+    script_path = f'{curr_dir}/eeg/{script}.py {roi}'
+    print(job_name)
+
+    #create sbatch script
+    f = open(f"{job_name}.sh", "a")
+    f.writelines(setup_sbatch(job_name, script_path))
+    
+    f.close()
+    
+    subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
+    os.remove(f"{job_name}.sh")
+

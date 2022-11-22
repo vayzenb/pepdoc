@@ -31,6 +31,8 @@ labels = params.labels
 #timing info
 stim_onset = params.stim_onset
 bin_size = params.bin_size
+bin_length = params.bin_length
+start_window = params.start_window
 
 iter = 1000 #number of iterations to use for decoding
 
@@ -133,6 +135,7 @@ def select_channels(sub_data, channels):
 
 
 def run_decoding():
+    print('Decoding categories...')
     all_sub_data = load_data(sub_list)
 
 
@@ -152,10 +155,60 @@ def run_decoding():
         np.save(f'{results_dir}/{roi}_decoding.npy', roi_decoding)
         np.save(f'{results_dir}/{roi}_decoding_sig.npy', roi_sig)
 
-def bootstrap_decoding():
+def calc_cis(iter):
+    """
+    Calc bootstrap CIs
+    """
+    print('Calculating CIs...')
+
+    alpha = .05
+
+    boot_df = pd.DataFrame()
+    for roi in rois:
+        decoding_data = np.load(f'{results_dir}/decode/{roi}_decoding.npy')
+        #decoding_data = decoding_data[:,stim_onset:]
+        decoding_data = pd.DataFrame(decoding_data) #convert to dataframe because it has a good resampling function
+        decode_boot = []
+        
+
+        
+        for ii in range(0,iter):
+            #resample the sub decode data with replacement
+            sub_sample = decoding_data.sample(decoding_data.shape[0],replace = True, random_state=ii)
+            
+            #convert it back to a numpy array
+            sub_sample = sub_sample.to_numpy() 
+
+            #calculate the bootstrap sample mean
+            decode_boot.append(np.mean(sub_sample, axis = 0))
+
+        decode_boot = np.asanyarray(decode_boot)
+        decode_cis = np.zeros((3,decode_boot.shape[1]))
+        for time in range(0,decode_boot.shape[1]):
+            #plot the difference values with confidence intervals
+            
+            ci_low = np.percentile(decode_boot[:,time], (alpha)*100)
+            ci_high= np.percentile(decode_boot[:,time], 100-(alpha)*100)
+            if ci_low >= .25:
+                sig = 1
+            else:
+                sig = 0
+
+            decode_cis[0,time] = ci_low
+            decode_cis[1,time] = ci_high
+            decode_cis[2,time] = sig
+
+        onset_num = np.where(decode_cis[2,:] == 1)[0][0]
+        onset = (onset_num *bin_length)-start_window
+        print(roi, onset)
+
+        np.save(f'{results_dir}/decode/{roi}_decode_cis.npy',decode_cis)
+
+def bootstrap_onset(iter):
     '''
     Boot strap participant data and extract onset
     '''
+    print('Bootstrapping onsets...')
 
     boot_df = pd.DataFrame()
     for roi in rois:
@@ -228,4 +281,5 @@ def bootstrap_decoding():
 
 
 run_decoding()
-bootstrap_decoding()
+calc_cis(10000)
+bootstrap_onset(1000)

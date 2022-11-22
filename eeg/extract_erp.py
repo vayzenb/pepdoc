@@ -26,6 +26,8 @@ labels = params.labels
 #timing info
 stim_onset = params.stim_onset
 bin_size = params.bin_size
+bin_length = params.bin_length
+start_window = params.start_window
 
 iter = 1000 #number of iterations to use for decoding
 
@@ -97,6 +99,8 @@ def select_channels(sub_data, channels):
 
 
 def calc_erps():
+    print('Calculating ERPs...')
+
     for roi in rois:
         all_sub_data = []
         for sub in sub_list:
@@ -121,14 +125,69 @@ def calc_erps():
         
         #save RDM
         np.save(f'{results_dir}/erp/{roi}_mean_ts.npy', all_sub_data)
-            
-def bootstrap_erp():
-    '''
-Boot strap participant data and extract onset
-'''
 
-    rois = ['dorsal','ventral']
-    iter = 1000
+def calc_cis(iter):
+    """
+    Calc bootstrap CIs
+    """
+    print('Calculating CIs...')
+
+    alpha = .05
+
+    boot_df = pd.DataFrame()
+    for roi in rois:
+        erp_data = np.load(f'{results_dir}/erp/{roi}_mean_ts.npy')
+
+        
+        pre_stim = erp_data[:,:stim_onset] #pull out the pre-stimulus data
+        pre_stim = np.mean(pre_stim, axis=1) #average across prestim timepoints
+
+        erp_data = erp_data - pre_stim[:,None]#subtract the prestimulus average from each timepoint
+
+        #decoding_data = decoding_data[:,stim_onset:]
+        erp_data = pd.DataFrame(erp_data) #convert to dataframe because it has a good resampling function
+        erp_boot = []
+        
+        
+        for ii in range(0,iter):
+            #resample the sub decode data with replacement
+            sub_sample = erp_data.sample(erp_data.shape[0],replace = True, random_state=ii)
+            
+            #convert it back to a numpy array
+            sub_sample = sub_sample.to_numpy() 
+
+            #calculate the bootstrap sample mean
+            erp_boot.append(np.mean(sub_sample, axis = 0))
+
+        erp_boot = np.asanyarray(erp_boot)
+        erp_cis = np.zeros((3,erp_boot.shape[1]))
+        for time in range(0,erp_boot.shape[1]):
+            #plot the difference values with confidence intervals
+            
+            ci_low = np.percentile(erp_boot[:,time], (alpha)*100)
+            ci_high= np.percentile(erp_boot[:,time], 100-(alpha)*100)
+            if ci_low >= 0:
+                sig = 1
+            else:
+                sig = 0
+
+            erp_cis[0,time] = ci_low
+            erp_cis[1,time] = ci_high
+            erp_cis[2,time] = sig
+
+        onset_num = np.where(erp_cis[2,:] == 1)[0][0]
+        onset = (onset_num *bin_length)-start_window
+        print(roi, onset)
+
+        np.save(f'{results_dir}/erp/{roi}_erp_cis.npy',erp_cis)
+            
+            
+def bootstrap_onset(iter):
+    '''
+    Boot strap participant data and extract onset
+    '''
+    
+    print('Bootstrapping onsets...')
 
     boot_df = pd.DataFrame()
     for roi in rois:
@@ -202,4 +261,5 @@ Boot strap participant data and extract onset
 
 
 calc_erps()
-bootstrap_erp()
+calc_cis(10000)
+bootstrap_onset(1000)
