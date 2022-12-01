@@ -118,8 +118,10 @@ def calc_sig_time(all_sub_decode, test_val):
     '''
     Calculate significant time
     '''
+    
     sig_ts = []
     for time in range(0,all_sub_decode.shape[1]):
+        print(time)
         p_val= stats.ttest_1samp(all_sub_decode[:,time], test_val, axis = 0, alternative='greater')
         
         #append the p-value for every time point
@@ -177,6 +179,7 @@ for ii in range(0,iter):
         #calculate mean ERP and append
         #Average roi_data across channels for each object
         roi_erp = extract_erp(sub_data[1])
+        all_sub_erp.append(roi_erp)
 
     #Calc significance of decoding
     all_sub_decode = np.asanyarray(all_sub_decode)
@@ -184,6 +187,7 @@ for ii in range(0,iter):
     decode_onset_boot.append(decode_onset)
 
     #calc significance of ERP
+
     all_sub_erp = np.asanyarray(all_sub_erp)
     erp_onset, erp_sig = calc_sig_time(all_sub_erp, test_val=0)
     erp_onset_boot.append(erp_onset)

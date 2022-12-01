@@ -64,16 +64,18 @@ def extract_erp(sub_data):
     '''
     Extract ERP
     '''
+
     #average across channels
     roi_mean = np.mean(sub_data, axis = 2)
     #Average roi_data across objects
     roi_mean = np.mean(roi_mean, axis = 0)
 
-    #absolute value
-    roi_mean = np.abs(roi_mean)
+    roi_mean = np.abs(roi_mean) #take the absolute value of the data
+
 
     pre_stim = roi_mean[:stim_onset] #pull out the pre-stimulus data
     pre_stim = np.mean(pre_stim) #average across prestim timepoints
+    
 
     roi_norm = roi_mean - pre_stim#subtract the prestimulus average from each timepoint
         
@@ -137,12 +139,6 @@ def calc_cis(iter):
     boot_df = pd.DataFrame()
     for roi in rois:
         erp_data = np.load(f'{results_dir}/erp/{roi}_mean_ts.npy')
-
-        
-        pre_stim = erp_data[:,:stim_onset] #pull out the pre-stimulus data
-        pre_stim = np.mean(pre_stim, axis=1) #average across prestim timepoints
-
-        erp_data = erp_data - pre_stim[:,None]#subtract the prestimulus average from each timepoint
 
         #decoding_data = decoding_data[:,stim_onset:]
         erp_data = pd.DataFrame(erp_data) #convert to dataframe because it has a good resampling function
@@ -262,4 +258,4 @@ def bootstrap_onset(iter):
 
 calc_erps()
 calc_cis(10000)
-bootstrap_onset(1000)
+bootstrap_onset(10000)

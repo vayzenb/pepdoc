@@ -44,7 +44,7 @@ rois = ['occipital','frontal','dorsal','ventral']
 
 #classifier info
 svm_test_size = .4
-svm_splits = 50
+svm_splits = 100
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
@@ -152,8 +152,8 @@ def run_decoding():
         
         roi_decoding = np.asanyarray(roi_decoding)
         roi_sig = np.asanyarray(roi_sig)
-        np.save(f'{results_dir}/{roi}_decoding.npy', roi_decoding)
-        np.save(f'{results_dir}/{roi}_decoding_sig.npy', roi_sig)
+        np.save(f'{results_dir}/decode/{roi}_decoding.npy', roi_decoding)
+        np.save(f'{results_dir}/decode/{roi}_decoding_sig.npy', roi_sig)
 
 def calc_cis(iter):
     """
@@ -282,4 +282,4 @@ def bootstrap_onset(iter):
 
 run_decoding()
 calc_cis(10000)
-bootstrap_onset(1000)
+bootstrap_onset(10000)

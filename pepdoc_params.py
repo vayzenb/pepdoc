@@ -33,3 +33,4 @@ channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 10
             
 channels['dorsal'] = channels['left_dorsal'] + channels['right_dorsal']
 channels['ventral'] = channels['left_ventral'] + channels['right_ventral']
+channels['frontal'] = channels['left_frontal'] + channels['right_frontal']
