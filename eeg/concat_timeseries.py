@@ -6,39 +6,44 @@ Outputs in both npy and mat file to support MVGCA
 """
 
 
+curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
 import os
+import sys
+
+sys.path.insert(0,curr_dir)
 import pandas as pd
 import numpy as np
 
-import scipy.io as spio
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
 import pdb
+import scipy.stats as stats
+import pepdoc_params as params
+
+print('libraries loaded...')
 
 
-data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
-curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
+#load params for decoding
+channels = params.channels
+sub_list = params.sub_list
+data_dir = params.data_dir
+categories = params.categories
+labels = params.labels
+
+#timing info
+stim_onset = params.stim_onset
+bin_size = params.bin_size
+bin_length = params.bin_length
+stim_offset = params.stim_offset
+
+
+
 results_dir = f'{curr_dir}/results' #where to save the results
-bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
-stim_onset = 13 #stimulus onset value (analysis time is -50, and we use 4 ms bins)
-offset_window =87 #when to cut the timecourse
-# bin_size = 1 
-categories = ['tool','nontool','bird','insect']
-labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 
-#sub codes
-sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
-
-rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral']
-
-#channels
-channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
-            'right_dorsal': [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'dorsal':  [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 109, 110, 118] + [131, 143, 154, 163, 130, 142, 153, 162, 129, 141, 152, 128, 140, 127],
-            'left_ventral':[104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134],
-            'right_ventral':[169, 177, 189, 159, 168, 176, 18, 199, 158, 167, 175, 187, 166, 174],
-            'ventral': [104, 105, 106, 111, 112, 113, 114, 115, 120, 121, 122, 123, 133, 134] + [169, 177, 189, 159, 168, 176, 188, 199, 158, 167, 175, 187, 166, 174],
-            'control': [11, 12, 18, 19, 20, 21, 25, 26, 27, 32, 33, 34, 37, 38]}
-
+rois =  ['dorsal','ventral','frontal','occipital']
 
 
 def concat_data(sub_list):
@@ -63,7 +68,7 @@ def concat_data(sub_list):
                 bin_data = bin_data.dropna() #drop missing values
 
                 
-                bin_data = bin_data.iloc[stim_onset:offset_window,:] #cut the pre-stim period, and the post-analysis period
+                bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels

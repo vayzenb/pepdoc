@@ -68,7 +68,7 @@ for script in script_list:
     subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
     os.remove(f"{job_name}.sh")
 '''
-rois = ['occipital','frontal','dorsal','ventral']
+rois = ['dorsal','ventral','occipital','frontal']
 #run high-demand scripts
 for roi in rois:
     job_name = f'resample_channels_{roi}'

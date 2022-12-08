@@ -47,7 +47,7 @@ sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
 
-iter = 1000
+
 def decode_eeg(sub_data):
 
     '''
@@ -192,9 +192,11 @@ for ii in range(0,iter):
     erp_onset, erp_sig = calc_sig_time(all_sub_erp, test_val=0)
     erp_onset_boot.append(erp_onset)
 
-#add datat to dataframe
-decode_onset_df[roi] = decode_onset
-erp_onset_df[roi] = erp_onset
+
+#add data to dataframe
+decode_onset_df[roi] = decode_onset_boot
+erp_onset_df[roi] = erp_onset_boot
+
 '''
 save results
 '''
