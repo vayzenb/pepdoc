@@ -4,7 +4,7 @@ clear all;
 
 data_dir = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/';
 sub_list = {'AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ'};
-sub_list = {'AC'};
+sub_list = {'GG'};
 exemplar_num = 5;
 cat_name = {'bird','insect','nontool','tool'};
 %%
@@ -14,12 +14,14 @@ for sub_n = 1:length(sub_list)
     clearvars  -except data_dir sub_n sub_list cat_name exemplar_num
     
     %import sub info
+    sub_n =1 
     sub = sub_list{sub_n};
-    sub_data= [data_dir,sub,'.set'];
+    sub_data= [data_dir,'/preprocessed/',sub,'.set'];
     importfile(sub_data)
     
     %assign data to EEG variable
     EEG.data = data;
+    EEG.chanlocs = chanlocs;
     EEG.trials = trials;
     EEG.event = event;
     EEG.chanlocs = chanlocs;
@@ -30,13 +32,13 @@ for sub_n = 1:length(sub_list)
     EEG.etc = etc;
     EEG.pnts = pnts;
     EEG.setname = setname;
-    EEG.icawinv = icawinv;
-    EEG.icachansind = icachansind;
-    EEG.icaweights= icaweights;
-    EEG.icasphere= icasphere;
+    %EEG.icawinv = icawinv;
+    %EEG.icachansind = icachansind;
+    %EEG.icaweights= icaweights;
+    %EEG.icasphere= icasphere;
     EEG.xmax = xmax;
     EEG.xmin = xmin;
-    EEG.icaact = icaact (EEG.data, EEG.icaweights, 0);
+    %EEG.icaact = icaact (EEG.data, EEG.icaweights, 0);
     
     %EEG.urevent = urevent;
     
@@ -62,8 +64,8 @@ for sub_n = 1:length(sub_list)
         mkdir(out_dir)
        for n_exemp = 1:exemplar_num
            outfile = [out_dir,cat_name{n_cat},int2str(n_exemp),'.tsv']
-           cat = pop_selectevent(EEG, 'stimuli', n_cat, 'exemplar', n_exemp);
-           pop_export(cat, outfile,'erp', 'on');
+           %cat = pop_selectevent(EEG, 'stimuli', n_cat, 'exemplar', n_exemp);
+           %pop_export(cat, outfile,'erp', 'on');
            
            
        end
