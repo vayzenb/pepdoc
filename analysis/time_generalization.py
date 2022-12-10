@@ -21,7 +21,7 @@ labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
 rois = ['dorsal','ventral']
-control_roi = 'frontal'
+control_rois = ['frontal', 'occipital']
 
 def time_generalization(roi_data1,roi_data2):
     #set up empty matrix to hold correlations
@@ -75,48 +75,51 @@ def time_generalization_mean():
     Time generalization for mean RDMs
     """
     print('Time generalization for mean RDMs')
-    control_rdm = np.load(f'{results_dir}/rsa/{control_roi}_rdm.npy')
-    for roi1 in rois:
-        #load data from each ROI
-        roi_data1 = np.load(f'{results_dir}/rsa/{roi1}_rdm.npy')
-        roi_data1 = roi_data1[stim_onset:offset_window,:]
-        for roi2 in rois:
-            roi_data2 = np.load(f'{results_dir}/rsa/{roi2}_rdm.npy')
-            roi_data2 = roi_data2[stim_onset:offset_window,:]
+    for control_roi in control_rois:
+        control_rdm = np.load(f'{results_dir}/rsa/{control_roi}_rdm.npy')
+        for roi1 in rois:
+            #load data from each ROI
+            roi_data1 = np.load(f'{results_dir}/rsa/{roi1}_rdm.npy')
+            roi_data1 = roi_data1[stim_onset:offset_window,:]
+            for roi2 in rois:
+                roi_data2 = np.load(f'{results_dir}/rsa/{roi2}_rdm.npy')
+                roi_data2 = roi_data2[stim_onset:offset_window,:]
 
-            #calculate time generalization
-            tgm = time_generalization(roi_data1,roi_data2)
-            partial_tgm = partial_time_generalization(roi_data1,roi_data2,control_rdm)
-            
-            
-            np.save(f'{results_dir}/rsa/{roi1}_{roi2}_corr_ts.npy',tgm)
-            np.save(f'{results_dir}/rsa/{roi1}_{roi2}_partial_corr_ts.npy',partial_tgm)
+                #calculate time generalization
+                tgm = time_generalization(roi_data1,roi_data2)
+                partial_tgm = partial_time_generalization(roi_data1,roi_data2,control_rdm)
+                
+                
+                np.save(f'{results_dir}/rsa/{roi1}_{roi2}_corr_ts.npy',tgm)
+                np.save(f'{results_dir}/rsa/{roi1}_{roi2}_corr_ts_partial_{control_roi}.npy',partial_tgm)
 
 def time_generalization_sub():
     """
     Time generalization for individual RDMs
     """
     print('Time generalization for individual RDMs')
-    for sub in sub_list:
-        print(sub)
-        control_rdm = np.load(f'{data_dir}/{sub}/{control_roi}_rdm.npy')
-        if (np.isnan(control_rdm).any()):
-            continue
-        else:
-            for roi1 in rois:
-                roi_data1 = np.load(f'{data_dir}/{sub}/{roi1}_rdm.npy')
-                roi_data1 = roi_data1[stim_onset:offset_window,:]
+    for control_roi in control_rois:
+        
+        for sub in sub_list:
+            print(sub)
+            control_rdm = np.load(f'{data_dir}/{sub}/{control_roi}_rdm.npy')
+            if (np.isnan(control_rdm).any()):
+                continue
+            else:
+                for roi1 in rois:
+                    roi_data1 = np.load(f'{data_dir}/{sub}/{roi1}_rdm.npy')
+                    roi_data1 = roi_data1[stim_onset:offset_window,:]
 
-                for roi2 in rois:
-                    roi_data2 = np.load(f'{data_dir}/{sub}/{roi2}_rdm.npy')
-                    roi_data2 = roi_data2[stim_onset:offset_window,:]
+                    for roi2 in rois:
+                        roi_data2 = np.load(f'{data_dir}/{sub}/{roi2}_rdm.npy')
+                        roi_data2 = roi_data2[stim_onset:offset_window,:]
 
-                    #calculate time generalization
-                    tgm = time_generalization(roi_data1,roi_data2)
-                    partial_tgm = partial_time_generalization(roi_data1,roi_data2,control_rdm)
-                    
-                    np.save(f'{data_dir}/{sub}_{roi1}_{roi2}_corr_ts.npy',tgm)
-                    np.save(f'{data_dir}/{sub}_{roi1}_{roi2}_partial_corr_ts.npy',partial_tgm)
+                        #calculate time generalization
+                        tgm = time_generalization(roi_data1,roi_data2)
+                        partial_tgm = partial_time_generalization(roi_data1,roi_data2,control_rdm)
+                        
+                        np.save(f'{data_dir}/{sub}_{roi1}_{roi2}_corr_ts.npy',tgm)
+                        np.save(f'{data_dir}/{sub}_{roi1}_{roi2}_corr_ts_{control_roi}.npy',partial_tgm)
 
                 
 time_generalization_sub()
