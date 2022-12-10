@@ -54,7 +54,7 @@
         for exemp_n = 1:exemplar_num
             %load original category data
             cat_file = [data_dir,  sub, '/',cat_name{cat_n},'s/',cat_name{cat_n},int2str(exemp_n),'.csv'];
-            
+            out_file = [data_dir,  sub, '/',cat_name{cat_n},'s/',cat_name{cat_n},int2str(exemp_n),'_lap.csv'];
             cat_data = readtable(cat_file);
             
             cat_inds(n,:) = linspace(start_ind, end_ind, 138);
@@ -74,8 +74,7 @@
     n = 1;
     for cat_n = 1:length(cat_name)
         for exemp_n = 1:exemplar_num
-            cat_data{2:end,2:end} = lap_data(:,cat_inds(n,:));
-            out_file = [data_dir,  sub, '/',cat_name{cat_n},'s/',cat_name{cat_n},int2str(exemp_n),'_lap.csv'];
+            cat_data = lap_data(:,cat_inds(n,:));
             writetable(cat_data,out_file,'WriteVariableNames',0);
             
         end
