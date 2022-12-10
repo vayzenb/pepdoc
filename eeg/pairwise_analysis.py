@@ -33,6 +33,8 @@ stim_onset = params.stim_onset
 bin_size = params.bin_size
 bin_length = params.bin_length
 
+suf = params.suf
+
 category_comp = [['nontool','bird','insect'],['tool','bird','insect'], ['tool','nontool','insect'], ['tool','nontool','bird']] #initial categories without tools
 label_comps = [[0]*5 + [1]*5 + [2]*5]
 
@@ -43,12 +45,12 @@ for cat1 in range(0,len(categories)):
         category_comp.append([categories[cat1],categories[cat2]])
         label_comps.append([0]*5 + [1]*5)
 
-rois = ['occipital','frontal','dorsal','ventral']
-rois = ['dorsal','ventral']
+rois = ['dorsal','ventral','occipital','frontal']
+
 
 #classifier info
 svm_test_size = .4
-svm_splits = 100 #CHANGE ME
+svm_splits = 100 
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))

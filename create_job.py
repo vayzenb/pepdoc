@@ -11,6 +11,7 @@ from glob import glob
 import os
 import time
 import pdb
+import pepdoc_params as params
 
 mem = 16
 run_time = "3-00:00:00"
@@ -19,11 +20,9 @@ run_time = "3-00:00:00"
 #stim info
 study_dir = f'/user_data/vayzenbe/GitHub_Repos/ginn/model_training'
 stim_dir = f'/lab_data/behrmannlab/image_sets/'
+sub_list = params.sub_list
 
 script_list = ['decode_category','extract_erp','pairwise_analysis']
-
-
-
 
 def setup_sbatch(job_name, script_name):
     sbatch_setup = f"""#!/bin/bash -l
@@ -45,18 +44,19 @@ def setup_sbatch(job_name, script_name):
 #SBATCH --output={curr_dir}/slurm_out/{job_name}.out
 
 conda activate ml_new
+module load matlab-9.7
 
-echo "images transferred"
-python {script_name}
+
+{script_name}
 """
     return sbatch_setup
 
 
-'''
+
 # run low-demand scripts
 for script in script_list:
     job_name = script
-    script_path = f'{curr_dir}/eeg/{script}.py'
+    script_path = f'python {curr_dir}/eeg/{script}.py'
     print(job_name)
 
     #create sbatch script
@@ -67,6 +67,8 @@ for script in script_list:
     
     subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
     os.remove(f"{job_name}.sh")
+
+
 '''
 rois = ['dorsal','ventral','occipital','frontal']
 #run high-demand scripts
@@ -83,4 +85,20 @@ for roi in rois:
     
     subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
     os.remove(f"{job_name}.sh")
+'''
+'''
+#matlab script
+for sub in sub_list:
+    job_name = f'laplacian_{sub}'
+    script_path = f'matlab -nodisplay -r "apply_laplacian {sub}"'
+    print(job_name)
 
+    #create sbatch script
+    f = open(f"{job_name}.sh", "a")
+    f.writelines(setup_sbatch(job_name, script_path))
+    
+    f.close()
+    
+    subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
+    os.remove(f"{job_name}.sh")
+'''

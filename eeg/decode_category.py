@@ -37,14 +37,16 @@ start_window = params.start_window
 iter = 1000 #number of iterations to use for decoding
 
 
-rois = ['occipital','frontal','dorsal','ventral']
+rois = ['dorsal','ventral','occipital','frontal']
+rois = ['dorsal','ventral']
 
-
+suf = params.suf
 
 
 #classifier info
 svm_test_size = .4
-svm_splits = 100
+svm_splits = 20
+
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
@@ -60,7 +62,7 @@ def load_data(sub_list):
         for category in categories: #loop through categories
             for nn in range(1,6): #loop through exemplars in categories
             
-                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.tsv' , sep='\t')#read in the file; first value is the file name
+                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}{suf}.csv' , sep=',')#read in the file; first value is the file name
                 curr_df = curr_df.T #use pandas to transpose data
                 curr_df.columns = curr_df.iloc[0] #set the column names to the first row
                 curr_df = curr_df.drop(curr_df.index[0]) #drop the first row
@@ -72,7 +74,12 @@ def load_data(sub_list):
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels
+
+                
+            
+
                 all_data.append(all_channel_data)
+        
             
         all_sub_data.append(all_data)
 
@@ -281,5 +288,5 @@ def bootstrap_onset(iter):
 
 
 run_decoding()
-calc_cis(10000)
-bootstrap_onset(10000)
+#calc_cis(10000)
+#bootstrap_onset(10000)

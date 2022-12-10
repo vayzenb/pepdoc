@@ -29,10 +29,12 @@ bin_size = params.bin_size
 bin_length = params.bin_length
 start_window = params.start_window
 
-iter = 1000 #number of iterations to use for decoding
+suf = params.suf
 
+iter = 10000 #number of iterations to use for decoding
 
-rois = ['occipital','frontal','dorsal','ventral']
+rois = ['dorsal','ventral','occipital','frontal']
+
 
 def load_data(sub):
     
@@ -42,7 +44,7 @@ def load_data(sub):
     for category in categories: #loop through categories
         for nn in range(1,6): #loop through exemplars in categories
         
-            curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.tsv' , sep='\t')#read in the file; first value is the file name
+            curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}{suf}.csv' , sep='\t')#read in the file; first value is the file name
             curr_df = curr_df.T #use pandas to transpose data
             curr_df.columns = curr_df.iloc[0] #set the column names to the first row
             curr_df = curr_df.drop(curr_df.index[0]) #drop the first row
