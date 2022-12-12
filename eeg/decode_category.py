@@ -38,14 +38,15 @@ iter = 1000 #number of iterations to use for decoding
 
 
 rois = ['dorsal','ventral','occipital','frontal']
-rois = ['dorsal','ventral']
+
 
 suf = params.suf
 
 
 #classifier info
 svm_test_size = .4
-svm_splits = 20
+svm_splits = 100
+
 
 sss = StratifiedShuffleSplit(n_splits=svm_splits, test_size=svm_test_size)
 
@@ -114,7 +115,7 @@ def decode_eeg(sub_data):
 
     decode_sig = np.asanyarray(decode_sig)
     #decode_sig = decode_sig[10:]
-    onset = np.where(decode_sig <= .05)[0][0]
+    #onset = np.where(decode_sig <= .05)[0][0]
 
 
     #decode_sig = np.asanyarray(decode_sig)
@@ -287,6 +288,6 @@ def bootstrap_onset(iter):
     boot_df.to_csv(f'{results_dir}/onsets/decode_onset_boot.csv',index= False)
 
 
-run_decoding()
+#run_decoding()
 #calc_cis(10000)
-#bootstrap_onset(10000)
+bootstrap_onset(10000)

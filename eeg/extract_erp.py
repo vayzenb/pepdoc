@@ -44,7 +44,7 @@ def load_data(sub):
     for category in categories: #loop through categories
         for nn in range(1,6): #loop through exemplars in categories
         
-            curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}{suf}.csv' , sep='\t')#read in the file; first value is the file name
+            curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}{suf}.csv')#read in the file; first value is the file name
             curr_df = curr_df.T #use pandas to transpose data
             curr_df.columns = curr_df.iloc[0] #set the column names to the first row
             curr_df = curr_df.drop(curr_df.index[0]) #drop the first row
@@ -109,6 +109,7 @@ def calc_erps():
         all_sub_data = []
         for sub in sub_list:
             print(f'{sub} {roi}')
+            
             #load data
             sub_data = load_data(sub) #load data for each sub
             
@@ -121,11 +122,14 @@ def calc_erps():
 
             
             all_sub_data.append(roi_mean)
+            
         
         
         all_sub_data = np.asanyarray(all_sub_data)
         
+        
         #mean_rdm = np.mean(all_sub_rdms, axis=0) #mean across subjects
+        
         
         #save RDM
         np.save(f'{results_dir}/erp/{roi}_mean_ts.npy', all_sub_data)

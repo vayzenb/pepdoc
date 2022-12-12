@@ -23,6 +23,7 @@ stim_dir = f'/lab_data/behrmannlab/image_sets/'
 sub_list = params.sub_list
 
 script_list = ['decode_category','extract_erp','pairwise_analysis']
+script_list = ['extract_erp','pairwise_analysis']
 
 def setup_sbatch(job_name, script_name):
     sbatch_setup = f"""#!/bin/bash -l

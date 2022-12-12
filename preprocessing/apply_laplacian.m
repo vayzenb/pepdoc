@@ -1,13 +1,13 @@
-%function [] = apply_laplacian(sub)
+function [] = apply_laplacian(sub)
     %% 
     %params
-    clear all
-    sub = 'AC';
+    
+    sub
 
-    data_dir = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/object_data/';
-    %data_dir = '/lab_data/behrmannlab/vlad/pepdoc/results_ex1/';
-    %eeg_data = '/lab_data/behrmannlab/vlad/pepdoc/data/preprocessed/';
-    eeg_data = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/preprocessed/';
+    %data_dir = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/object_data/';
+    data_dir = '/lab_data/behrmannlab/vlad/pepdoc/results_ex1/';
+    eeg_data = '/lab_data/behrmannlab/vlad/pepdoc/data/preprocessed/';
+    %eeg_data = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/preprocessed/';
     %sub_list = {'AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ'};
 
     exemplar_num = 5;
@@ -77,6 +77,7 @@
             cat_data{2:end,2:end} = lap_data(:,cat_inds(n,:));
             out_file = [data_dir,  sub, '/',cat_name{cat_n},'s/',cat_name{cat_n},int2str(exemp_n),'_lap.csv'];
             writetable(cat_data,out_file,'WriteVariableNames',0);
+            n = n + 1;
             
         end
     end
@@ -99,5 +100,5 @@
         end
         data = newData1;
     end
-%end
+end
 

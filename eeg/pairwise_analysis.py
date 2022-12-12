@@ -66,7 +66,7 @@ def load_data(sub_list, categories):
         for category in categories: #loop through categories
             for nn in range(1,6): #loop through exemplars in categories
             
-                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.tsv' , sep='\t')#read in the file; first value is the file name
+                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}{suf}.csv' )#read in the file; first value is the file name
                 curr_df = curr_df.T #use pandas to transpose data
                 curr_df.columns = curr_df.iloc[0] #set the column names to the first row
                 curr_df = curr_df.drop(curr_df.index[0]) #drop the first row

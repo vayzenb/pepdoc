@@ -22,7 +22,7 @@ labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
 #sub list
 sub_list = ['AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
 
-suf = '_lap'
+suf = ''
 
 #channels of interest
 channels = {'left_dorsal': [77, 78, 79, 80, 86, 87, 88, 89, 98, 99, 100, 110, 109, 118],
