@@ -178,8 +178,6 @@ def calc_cis(iter):
         decoding_data = pd.DataFrame(decoding_data) #convert to dataframe because it has a good resampling function
         decode_boot = []
         
-
-        
         for ii in range(0,iter):
             #resample the sub decode data with replacement
             sub_sample = decoding_data.sample(decoding_data.shape[0],replace = True, random_state=ii)
@@ -288,6 +286,6 @@ def bootstrap_onset(iter):
     boot_df.to_csv(f'{results_dir}/onsets/decode_onset_boot.csv',index= False)
 
 
-#run_decoding()
-#calc_cis(10000)
+run_decoding()
+calc_cis(10000)
 bootstrap_onset(10000)

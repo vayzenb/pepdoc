@@ -21,6 +21,7 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 import pdb
 import scipy.stats as stats
+import scipy.io as spio
 import pepdoc_params as params
 
 print('libraries loaded...')
@@ -68,7 +69,7 @@ def concat_data(sub_list):
                 bin_data = bin_data.dropna() #drop missing values
 
                 
-                bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
+                #bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels
@@ -119,6 +120,6 @@ for roi in rois:
     for sub in enumerate(sub_list):
         print(f'Extracting for {roi} {sub}')
         roi_data = select_channels(all_sub_data[sub[0]], channels[roi])
-        np.save(f'{data_dir}/{sub[1]}_{roi}_concat_ts.npy', roi_data)
-        spio.savemat(f'{data_dir}/{sub[1]}_{roi}_concat_data.mat', {f'{sub[1]}_{roi}_ts': roi_data})
+        np.save(f'{data_dir}/{sub[1]}/{roi}_concat_ts_full.npy', roi_data)
+        spio.savemat(f'{data_dir}/{sub[1]}_{roi}_concat_data_full.mat', {f'{sub[1]}_{roi}_ts': roi_data})
         
