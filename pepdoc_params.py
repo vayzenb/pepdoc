@@ -2,6 +2,7 @@ import numpy as np
 
 data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
 curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
+results_dir = f'{curr_dir}/results' #where to save the results
 
 pre_stim = 50 #ms before stim onset
 stim_end = 300 #ms when stim goes off

@@ -17,6 +17,7 @@ import pdb
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 import pepdoc_params as params
+import scipy.io as spio
 
 scaler = MinMaxScaler()
 
@@ -37,7 +38,7 @@ bin_size = params.bin_size
 bin_length = params.bin_length
 start_window = params.start_window
 stim_offset = params.stim_offset
-suf = params.suf
+suf = '_full'
 
 
 results_dir = f'{curr_dir}/results' #where to save the results
@@ -75,11 +76,11 @@ for sub in sub_list:
     for roi in rois:
         print(f'{sub} {roi}')
         #load timeseries
-        roi_ts = np.load(f'{data_dir}/{sub}/{roi}_concat_ts_full.npy')
+        roi_ts = np.load(f'{data_dir}/{sub}/{roi}_concat_ts{suf}.npy')
 
         #load control rois
         for control in control_rois:
-            control_ts = np.load(f'{data_dir}/{sub}/{control}_pcs_full.npy')
+            control_ts = np.load(f'{data_dir}/{sub}/{control}_pcs{suf}.npy')
             
 
 
@@ -96,6 +97,7 @@ for sub in sub_list:
             
             
             #save residuals
-            np.save(f'{data_dir}/{sub}/{roi}_{control}_resid_ts.npy',resid_ts)
-            np.save(f'{data_dir}/{sub}/{roi}_{control}_cat_resid.npy',all_cat_data)
+            np.save(f'{data_dir}/{sub}/{roi}_{control}_resid_ts{suf}.npy',resid_ts)
+            spio.savemat(f'{data_dir}/{sub}/{roi}_{control}_resid_ts{suf}.mat', {f'{sub[1]}_{roi}_ts': resid_ts})
+            np.save(f'{data_dir}/{sub}/{roi}_{control}_cat_resid{suf}.npy',all_cat_data)
 

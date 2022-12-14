@@ -40,7 +40,7 @@ bin_size = params.bin_size
 bin_length = params.bin_length
 stim_offset = params.stim_offset
 
-
+suf = ''
 
 results_dir = f'{curr_dir}/results' #where to save the results
 
@@ -58,7 +58,7 @@ def concat_data(sub_list):
         for category in categories: #loop through categories
             for nn in range(1,6): #loop through exemplars in categories
             
-                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.tsv' , sep='\t')#read in the file; first value is the file name
+                curr_df = pd.read_csv(f'/{data_dir}/{sub}/{category}s/{category}{nn}.csv' )#read in the file; first value is the file name
                 curr_df = curr_df.T #use pandas to transpose data
                 curr_df.columns = curr_df.iloc[0] #set the column names to the first row
                 curr_df = curr_df.drop(curr_df.index[0]) #drop the first row
@@ -69,7 +69,7 @@ def concat_data(sub_list):
                 bin_data = bin_data.dropna() #drop missing values
 
                 
-                #bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
+                bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels
@@ -120,6 +120,6 @@ for roi in rois:
     for sub in enumerate(sub_list):
         print(f'Extracting for {roi} {sub}')
         roi_data = select_channels(all_sub_data[sub[0]], channels[roi])
-        np.save(f'{data_dir}/{sub[1]}/{roi}_concat_ts_full.npy', roi_data)
-        spio.savemat(f'{data_dir}/{sub[1]}_{roi}_concat_data_full.mat', {f'{sub[1]}_{roi}_ts': roi_data})
+        np.save(f'{data_dir}/{sub[1]}/{roi}_concat_ts{suf}.npy', roi_data)
+        spio.savemat(f'{data_dir}/{sub[1]}/{roi}_concat_ts{suf}.mat', {f'{sub[1]}_{roi}_ts': roi_data})
         

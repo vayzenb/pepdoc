@@ -1,3 +1,7 @@
+curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
+import sys
+
+sys.path.insert(0,curr_dir)
 import os
 import pandas as pd
 import numpy as np
@@ -7,18 +11,22 @@ from sklearn import metrics
 import pingouin as pg
 
 import pdb
+import pepdoc_params as params
 
-data_dir = f'/lab_data/behrmannlab/vlad/pepdoc/results_ex1' #read in the file; first value is the file name
-curr_dir = f'/user_data/vayzenbe/GitHub_Repos/pepdoc' #CHANGE AS NEEEDED CAUSE ITS FOR VLAAAD
-results_dir = f'{curr_dir}/results' #where to save the results
-bin_size = 1 #20 ms bins (EACH BIN IS 4 MS SO 5 ROWS ARE 20 MS)
-stim_onset = 0 #stimulus onset value (analysis time is -50, and we use 4 ms bins)
-offset_window =138 #when to cut the timecourse
-# bin_size = 1 
-sub_list = ['AC_newepoch','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ']
-categories = ['tool','nontool','bird','insect']
-labels = np.asanyarray([0]*5 + [1]*5 + [2]*5 + [3]*5) #creates labels for data
+results_dir = params.results_dir #where to save the results
+data_dir = params.data_dir
+#load params for decoding
+channels = params.channels
+sub_list = params.sub_list
+data_dir = params.data_dir
+categories = params.categories
+labels = params.labels
 
+#timing info
+stim_onset = params.stim_onset
+stim_offset = params.stim_offset
+bin_size = params.bin_size
+bin_length = params.bin_length
 rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
 rois = ['dorsal','ventral']
 control_rois = ['frontal', 'occipital']
@@ -80,10 +88,10 @@ def time_generalization_mean():
         for roi1 in rois:
             #load data from each ROI
             roi_data1 = np.load(f'{results_dir}/rsa/{roi1}_rdm.npy')
-            roi_data1 = roi_data1[stim_onset:offset_window,:]
+            roi_data1 = roi_data1[stim_onset:stim_offset,:]
             for roi2 in rois:
                 roi_data2 = np.load(f'{results_dir}/rsa/{roi2}_rdm.npy')
-                roi_data2 = roi_data2[stim_onset:offset_window,:]
+                roi_data2 = roi_data2[stim_onset:stim_offset,:]
 
                 #calculate time generalization
                 tgm = time_generalization(roi_data1,roi_data2)
@@ -108,11 +116,11 @@ def time_generalization_sub():
             else:
                 for roi1 in rois:
                     roi_data1 = np.load(f'{data_dir}/{sub}/{roi1}_rdm.npy')
-                    roi_data1 = roi_data1[stim_onset:offset_window,:]
+                    roi_data1 = roi_data1[stim_onset:stim_offset,:]
 
                     for roi2 in rois:
                         roi_data2 = np.load(f'{data_dir}/{sub}/{roi2}_rdm.npy')
-                        roi_data2 = roi_data2[stim_onset:offset_window,:]
+                        roi_data2 = roi_data2[stim_onset:stim_offset,:]
 
                         #calculate time generalization
                         tgm = time_generalization(roi_data1,roi_data2)
