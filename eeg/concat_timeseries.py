@@ -40,11 +40,16 @@ bin_size = params.bin_size
 bin_length = params.bin_length
 stim_offset = params.stim_offset
 
-suf = ''
+
 
 results_dir = f'{curr_dir}/results' #where to save the results
 
 rois =  ['dorsal','ventral','frontal','occipital']
+full_ts = True
+if full_ts:
+    suf = '_full'
+else:
+    suf = ''
 
 
 def concat_data(sub_list):
@@ -67,9 +72,10 @@ def concat_data(sub_list):
                 bin_data = curr_df.rolling(bin_size).mean() #rolling avg given the bin size
                 
                 bin_data = bin_data.dropna() #drop missing values
-
                 
-                bin_data = bin_data.iloc[stim_onset:stim_offset,:] #cut the pre-stim period, and the post-analysis period
+                if not full_ts:
+                    bin_data = bin_data.iloc[stim_onset:stim_offset,:]
+                
                 bin_data = bin_data.reset_index() #reset the index of the dataframe
                 
                 all_channel_data = bin_data.drop(columns = ['index']) #drop columns that are not channels

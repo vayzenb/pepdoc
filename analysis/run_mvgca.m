@@ -13,10 +13,21 @@ sub_list = {'AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','M
 
 dorsal_roi = 'dorsal';
 ventral_roi = 'ventral';
-control = '_frontal'
+control = ''
+full_ts = false;
+
+
+if full_ts
+    full_suf = '_full';
+else
+    full_suf = '';
+end
+
+file_suf = [control,full_suf]
+
 cols = {'sub'}; %
 
-file_suf = control
+
 %%
 %start analysis loop
 sn = 1; %tracks which sub num we are on
@@ -29,19 +40,18 @@ for sub = sub_list
     
          
     if isempty(control)
-        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,'_concat_ts.mat'];
-        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,'_concat_ts.mat'];
+        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,'_concat_ts',full_suf,'.mat'];
+        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,'_concat_ts',full_suf,'.mat'];
 
     else
-        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,control,'_resid_ts.mat'];
-        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,control,'_resid_ts.mat'];
+        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,control,'_resid_ts',full_suf,'.mat'];
+        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,control,'_resid_ts',full_suf,'.mat'];
     end
     
     
     dorsal_ts = cell2mat(struct2cell(load(dorsal_file))); %load .mat file and convert to mat
     dorsal_ts = diff(dorsal_ts,1,1); %take diff of TS to make stationary
     dorsal_times = size(dorsal_ts); %save size for later
-
     
     ventral_ts = cell2mat(struct2cell(load(ventral_file))); %load .mat file and convert to mat
     ventral_ts = diff(ventral_ts,1,1); %take diff of TS to make stationary
