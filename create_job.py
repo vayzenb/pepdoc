@@ -53,7 +53,7 @@ module load matlab-9.7
     return sbatch_setup
 
 
-
+'''
 # run low-demand scripts
 for script in script_list:
     job_name = script
@@ -68,7 +68,7 @@ for script in script_list:
     
     subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
     os.remove(f"{job_name}.sh")
-
+'''
 
 '''
 rois = ['dorsal','ventral','occipital','frontal']
@@ -103,3 +103,17 @@ for sub in sub_list:
     subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
     os.remove(f"{job_name}.sh")
 '''
+
+for sub in sub_list:
+    job_name = f'tga_{sub}'
+    script_path = f'python analysis/time_generalization.py {sub}'
+    print(job_name)
+
+    #create sbatch script
+    f = open(f"{job_name}.sh", "a")
+    f.writelines(setup_sbatch(job_name, script_path))
+    
+    f.close()
+    
+    subprocess.run(['sbatch', f"{job_name}.sh"],check=True, capture_output=True, text=True)
+    os.remove(f"{job_name}.sh")
