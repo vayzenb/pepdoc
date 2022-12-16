@@ -27,9 +27,9 @@ stim_onset = params.stim_onset
 stim_offset = params.stim_offset
 bin_size = params.bin_size
 bin_length = params.bin_length
-rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
-rois = ['dorsal','ventral']
-control_rois = ['frontal', 'occipital']
+#rois = ['dorsal','ventral','control', 'left_dorsal', 'right_dorsal', 'left_ventral', 'right_ventral']
+rois = ['dorsal','ventral','frontal', 'occipital']
+control_rois = ['frontal', 'occipital','dorsal','ventral']
 
 def time_generalization(roi_data1,roi_data2):
     #set up empty matrix to hold correlations
@@ -85,13 +85,14 @@ def time_generalization_mean():
     print('Time generalization for mean RDMs')
     for control_roi in control_rois:
         control_rdm = np.load(f'{results_dir}/rsa/{control_roi}_rdm.npy')
+        control_rdm = control_rdm[0:stim_offset,:]
         for roi1 in rois:
             #load data from each ROI
             roi_data1 = np.load(f'{results_dir}/rsa/{roi1}_rdm.npy')
-            roi_data1 = roi_data1[stim_onset:stim_offset,:]
+            roi_data1 = roi_data1[0:stim_offset,:]
             for roi2 in rois:
                 roi_data2 = np.load(f'{results_dir}/rsa/{roi2}_rdm.npy')
-                roi_data2 = roi_data2[stim_onset:stim_offset,:]
+                roi_data2 = roi_data2[0:stim_offset,:]
 
                 #calculate time generalization
                 tgm = time_generalization(roi_data1,roi_data2)
@@ -130,4 +131,5 @@ def time_generalization_sub():
                         np.save(f'{data_dir}/{sub}_{roi1}_{roi2}_corr_ts_{control_roi}.npy',partial_tgm)
 
                 
-time_generalization_sub()
+#time_generalization_sub()
+time_generalization_mean()

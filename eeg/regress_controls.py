@@ -43,7 +43,7 @@ suf = '_full'
 
 results_dir = f'{curr_dir}/results' #where to save the results
 
-rois = ['dorsal','ventral']
+rois = ['dorsal','ventral','frontal']
 control_rois = ['frontal','occipital','partial_brain','dorsal','ventral']
 
 def split_ts(eeg_ts):

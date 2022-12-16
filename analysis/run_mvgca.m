@@ -3,18 +3,17 @@ clear all;
 %set up dirs and sub/roi params
 data_dir = '/lab_data/behrmannlab/vlad/pepdoc/results_ex1';
 curr_dir = '/user_data/vayzenbe/GitHub_Repos/pepdoc' 
-results_dir = [curr_dir,'/results/mvgca'];
-addpath('/user_data/vayzenbe/GitHub_Repos/MVGC1')
+results_dir = [curr_dir,'/results/mvgca/'];
+
+seed_roi = 'occipital'
+target_roi = 'dorsal'
+control = '';
+full_ts = false;
+
+addpath('/user_data/vayzenbe/GitHub_Repos/MVGC1');
 startup;
 
 sub_list = {'AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ'};
-
-
-
-dorsal_roi = 'dorsal';
-ventral_roi = 'ventral';
-control = ''
-full_ts = false;
 
 
 if full_ts
@@ -23,7 +22,7 @@ else
     full_suf = '';
 end
 
-file_suf = [control,full_suf]
+file_suf = [control,full_suf];
 
 cols = {'sub'}; %
 
@@ -40,42 +39,41 @@ for sub = sub_list
     
          
     if isempty(control)
-        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,'_concat_ts',full_suf,'.mat'];
-        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,'_concat_ts',full_suf,'.mat'];
+        seed_file = [data_dir,'/',sub{1},'/',seed_roi,'_concat_ts',full_suf,'.mat'];
+        target_file = [data_dir,'/',sub{1},'/',target_roi,'_concat_ts',full_suf,'.mat'];
 
     else
-        dorsal_file = [data_dir,'/',sub{1},'/',dorsal_roi,control,'_resid_ts',full_suf,'.mat'];
-        ventral_file = [data_dir,'/',sub{1},'/',ventral_roi,control,'_resid_ts',full_suf,'.mat'];
+        seed_file = [data_dir,'/',sub{1},'/',seed_roi,'_',control,'_resid_ts',full_suf,'.mat'];
+        target_file = [data_dir,'/',sub{1},'/',target_roi,'_',control,'_resid_ts',full_suf,'.mat'];
     end
     
     
-    dorsal_ts = cell2mat(struct2cell(load(dorsal_file))); %load .mat file and convert to mat
-    dorsal_ts = diff(dorsal_ts,1,1); %take diff of TS to make stationary
-    dorsal_times = size(dorsal_ts); %save size for later
+    seed_ts = cell2mat(struct2cell(load(seed_file))); %load .mat file and convert to mat
+    seed_ts = diff(seed_ts,1,1); %take diff of TS to make stationary
+    seed_times = size(seed_ts); %save size for later
     
-    ventral_ts = cell2mat(struct2cell(load(ventral_file))); %load .mat file and convert to mat
-    ventral_ts = diff(ventral_ts,1,1); %take diff of TS to make stationary
-    ventral_times = size(ventral_ts); %save size for later
+    target_ts = cell2mat(struct2cell(load(target_file))); %load .mat file and convert to mat
+    target_ts = diff(target_ts,1,1); %take diff of TS to make stationary
+    target_times = size(target_ts); %save size for later
 
     %for first sub add rois to col cell to eventually make the
     %summary columns
     if strcmp(sub{1}, sub_list{1})
-        cols{end+1} = [dorsal_roi,'_',ventral_roi];
+        cols{end+1} = [seed_roi,'_',target_roi];
     end
     
 
     %determine what the min number of PCs to use
     %mvgca has to have same number of TSs
-    channel_n = min([dorsal_times(2),ventral_times(2)]); 
+    channel_n = min([seed_times(2),target_times(2)]); 
     
     %setup empty 3D tensor and add dorsal and ventral TSs
-    X = zeros(2, dorsal_times(1),channel_n);
-    size(dorsal_ts)
+    X = zeros(2, seed_times(1),channel_n);
+    size(seed_ts)
     
 
-    X(1,:,:)= dorsal_ts(:,1:channel_n);
-    X(2,:,:)= ventral_ts(:,1:channel_n);
-    
+    X(1,:,:)= seed_ts(:,1:channel_n);
+    X(2,:,:)= target_ts(:,1:channel_n);
     
     %run mvgca
     [F, p] = mvgc_ts(X);
@@ -86,16 +84,13 @@ for sub = sub_list
     sub_summary{sn, rn} = f_diff;
     rn = rn +1;
 
-
-    
     sn = sn + 1;
 end
 
 
-   
-
 %%
 %convert final summary to table and save
 final_summary = cell2table(sub_summary, 'VariableNames', cols);
-writetable(final_summary, [results_dir,'/mvgca_summary', file_suf,'.csv'], 'Delimiter', ',')
+
+writetable(final_summary, [results_dir,seed_roi,'_',target_roi, file_suf,'.csv'], 'Delimiter', ',')
 
