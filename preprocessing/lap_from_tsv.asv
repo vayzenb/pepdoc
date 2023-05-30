@@ -1,0 +1,80 @@
+clear all;
+%% 
+%params
+
+data_dir = 'C:/Users/vayze/Documents/Research/Projects/PepDoc/data/';
+sub_list = {'AC','AM', 'BB','CM','CR','GG','HA','IB','JM','JR','KK','KT','MC','MH','NF','SB','SG','SOG','TL','ZZ'};
+sub_list = {'AC'};
+exemplar_num = 5;
+cat_name = {'bird','insect','nontool','tool'};
+sub_n = 1;
+cat_n = 1;
+exemp_n =1;
+
+%% 
+%load sub data
+
+sub = sub_list{sub_n};
+sub_data= [data_dir,'preprocessed/',sub,'.set'];
+importfile(sub_data)
+
+clearvars  -except data_dir sub_n sub_list cat_name exemplar_num chanlocs sub sub_n cat_n exemp_n
+
+%load tsv as table
+
+%loop through object data
+cat_file = [data_dir, 'object_data/', sub, '/',cat_name{cat_n},'s/',cat_name{cat_n},int2str(exemp_n),'.csv'];
+cat = readtable(cat_file);
+sz = size(cat);
+
+%loop through and find channel indices
+for ii = 1:(sz(1)-1)
+    curr_channel = cat.Var1(ii+1,1);
+    channel_inds(ii,1) = find(strcmp({chanlocs.labels}, curr_channel{1})==1);
+end
+
+chanlocs = chanlocs(channel_inds(:,1));
+
+
+X = [chanlocs.X];
+Y = [chanlocs.Y];
+Z = [chanlocs.Z];
+
+for cat 
+
+%apply laplacian
+lap_data = laplacian_perrinX(eeg_data,X, Y, Z);
+
+% 
+% eeg_data = bird1{2:end,2:end};
+% curr_channels = bird1{2:end,1};
+% for ii = 1:length(curr_channels);
+%    curr_channels(ii,2) = channel_info(channel_info(:,1) ==  curr_channels(ii), 2);
+%    curr_channels(ii,3) = channel_info(channel_info(:,1) ==  curr_channels(ii), 3);
+%    curr_channels(ii,4) = channel_info(channel_info(:,1) ==  curr_channels(ii), 4);
+% end
+% 
+% chanlocs  =EEG.chanlocs(curr_channels(:,1));
+% 
+% 
+%     
+%     
+
+% 
+% times2plot = [12,20,65];
+% for i=1:length(times2plot)
+%     subplot(2,length(times2plot),i)
+%     topoplot(eeg_data(:,times2plot(i)),chanlocs,'plotrad',.53,'maplimits',[-10 10],'electrodes','off');
+%     title([ 'Voltage, ' num2str(times2plot(i)*4-50) ' ms' ])
+% 
+% % plot Laplacian map (spatially filtered)
+% subplot(2,length(times2plot),i+length(times2plot))
+% topoplot(lap_data(:,times2plot(i)),chanlocs,'plotrad',.53,'maplimits',[-40 40],'electrodes','off');
+% title([ 'Lap., ' num2str(times2plot(i)*4-50) ' ms' ])
+% 
+% 
+% end
+% 
+% 
+% % plot voltage map (spatially unfiltered)
+% 

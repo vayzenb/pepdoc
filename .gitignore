@@ -1,0 +1,6 @@
+modelling/weights/
+nilearn_cache/
+slurm_out/
+
+*.out
+*.ipynb_checkpoints
